@@ -119,7 +119,8 @@ int main(int argc, char * argv[]) {
   
   // model matrix
   GLint modelTransform = glGetUniformLocation(shaderProgram, "model");
-  glm::mat4 scale_model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f,0.5f,0.0f));
+  glm::mat4 scale_model = 
+             glm::translate(glm::rotate(glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.0f)), 1.04f , glm::vec3(0.2f, 0.0f, 0.1f)), glm::vec3(.3f, -.2f, .2f));
 	glm::mat4 model = scale_model;
   glUniformMatrix4fv(modelTransform, 1, GL_FALSE, glm::value_ptr(model));
   
