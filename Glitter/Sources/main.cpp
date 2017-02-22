@@ -14,6 +14,8 @@
 // Standard Headers
 #include <cstdio>
 #include <cstdlib>
+#include <ctime>
+#include <iostream>
 
 #define RED 1.0f, 0.0f, 0.0f            // define macros for convenience
 #define BLUE 0.0f, 0.0f, 1.0f
@@ -62,6 +64,10 @@ void character_callback(GLFWwindow* window, unsigned int codepoint)
 
 int main(int argc, char * argv[]) {
   // Load GLFW and Create a Window
+
+  //Starting clock time of running program to have dynamic transformations
+  clock_t cl1 = clock();
+
   glfwInit();
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
@@ -79,18 +85,18 @@ int main(int argc, char * argv[]) {
   glfwMakeContextCurrent(mWindow);
   gladLoadGL();
   fprintf(stderr, "OpenGL %s\n", glGetString(GL_VERSION));
-  
+
   // Create Vertex Array Object: this will store all the information about the vertex data that we are about to specify
   GLuint vao;
   glGenVertexArrays(1, &vao);
   glBindVertexArray(vao);
-  
+
   // Create a Vertex Buffer Object and copy the vertex data to it
   GLuint vbo;
   glGenBuffers(1, &vbo);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-  
+
   // Create and compile the vertex shader
   GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
   glShaderSource(vertexShader, 1, &vertexSource, NULL);
@@ -106,7 +112,7 @@ int main(int argc, char * argv[]) {
   glBindFragDataLocation(shaderProgram, 0, "outColor");
   glLinkProgram(shaderProgram);
   glUseProgram(shaderProgram);
-  
+
   // Specify the layout of the vertex data
   // position
   GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
@@ -116,34 +122,60 @@ int main(int argc, char * argv[]) {
   GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
   glEnableVertexAttribArray(colAttrib);
   glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
-  
+
   // model matrix
+  //Static Transformation
   GLint modelTransform = glGetUniformLocation(shaderProgram, "model");
-  glm::mat4 scale_model = glm::scale(glm::mat4(1.0f), glm::vec3(0.5f,0.5f,0.0f));
+  glm::mat4 scale_model = glm::translate(
+                          glm::rotate   (
+                          glm::scale    (
+                            glm::mat4(1.0f),  glm::vec3(0.5f, 0.5f, 0.0f) ),
+                                      1.04f,  glm::vec3(0.2f, 0.0f, 0.1f) ),
+                                              glm::vec3(.3f, -.2f, .2f)   );
 	glm::mat4 model = scale_model;
   glUniformMatrix4fv(modelTransform, 1, GL_FALSE, glm::value_ptr(model));
-  
+
   // Rendering Loop
   while (glfwWindowShouldClose(mWindow) == false) {
-    
+    //Get running time of program
+    clock_t cl2 = clock();
+    //Take the difference between the start time and the end time
+    double diff = (double)cl2 - (double)cl1;
+    //Divide by the macro CLOCKS_PER_SEC to get the number of seconds this program has ran
+    double seconds = diff/CLOCKS_PER_SEC;
+
     // Background Fill Color
     glClearColor(0.85f, 0.65f, 0.65f, 0.8f);
     glClear(GL_COLOR_BUFFER_BIT);
-    
+
+    //Dynamically transform before you draw the triangle
+    //Using the system clock, and by taking the sin of the current time this program has ran,
+    //it ensures that the triangle will not go beyond the current axis set to [-1,1] for both x and y
+    GLint modelTransform = glGetUniformLocation(shaderProgram, "model");
+    glm::mat4 scale_model = glm::translate(
+                            glm::rotate   (
+                            glm::scale    (
+                              glm::mat4(1.0f),  glm::vec3(0.5f * sin(seconds * 3),  0.5f * sin(seconds / 2), 0.3f * sin(seconds    ))   ),
+                                        1.04f,  glm::vec3(0.2f * sin(seconds / 2),  0.2f * sin(seconds * 3), 0.1f * sin(seconds / 2))   ),
+                                                glm::vec3(0.3f * sin(seconds / 2), -0.2f * sin(seconds / 2), 0.2f * sin(seconds / 2))   );
+    glm::mat4 model = scale_model;
+    glUniformMatrix4fv(modelTransform, 1, GL_FALSE, glm::value_ptr(model));
+
     // draw triangle
     glDrawArrays(GL_TRIANGLES, 0, sizeof(vertices)/sizeof(vertices[0]));
-    
+
     // Flip Buffers and Draw
     glfwSwapBuffers(mWindow);
     glfwPollEvents();
+
   }   glfwTerminate();
-  
+
   // clean up
   glDeleteProgram(shaderProgram);
   glDeleteShader(fragmentShader);
   glDeleteShader(vertexShader);
   glDeleteBuffers(1, &vbo);
   glDeleteVertexArrays(1, &vao);
-  
+
   return EXIT_SUCCESS;
 }
