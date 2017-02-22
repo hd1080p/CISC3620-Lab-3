@@ -149,7 +149,8 @@ int main(int argc, char * argv[]) {
     glClear(GL_COLOR_BUFFER_BIT);
 
     //Dynamically transform before you draw the triangle
-    //Using the system clock,
+    //Using the system clock, and by taking the sin of the current time this program has ran,
+    //it ensures that the triangle will not go beyond the current axis set to [-1,1] for both x and y
     GLint modelTransform = glGetUniformLocation(shaderProgram, "model");
     glm::mat4 scale_model = glm::translate(
                             glm::rotate   (
